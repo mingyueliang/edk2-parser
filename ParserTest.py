@@ -47,12 +47,14 @@ def TestDscParser(dsc_path,WorkspaceDir):
     # for item in dsc_parser[MODEL_META_DATA_DEFINE,"COMMON","COMMON"]:
     #     print(item)
     # print("--------------------------")
-    for item in dsc_parser[MODEL_META_DATA_GLOBAL_DEFINE,"COMMON","COMMON"]:
-        print(item)
+    # for item in dsc_parser[MODEL_META_DATA_GLOBAL_DEFINE,"COMMON","COMMON"]:
+    #     print(item)
 
     dsc_gen = DscGen()
     dsc_gen.from_parser(dsc_parser)
-    # print(dsc_gen.FormatDsc())
+    print(dsc_gen.FormatDsc())
+    # print(dsc_gen.FormatJson())
+    # print(dsc_gen.FormatYaml())
 
     # for item in dsc_parser[MODEL_EFI_DEFAULT_STORES]:
     #     print(item)
@@ -66,8 +68,8 @@ def TestDscParser(dsc_path,WorkspaceDir):
     # for item in dsc_parser[MODEL_EFI_LIBRARY_CLASS,"COMMON"]:
     #     print(item)
     # print("--------------------------")
-    for item in dsc_parser[MODEL_EFI_LIBRARY_CLASS,"IA32"]:
-        print(item)
+    # for item in dsc_parser[MODEL_EFI_LIBRARY_CLASS,"IA32"]:
+    #     print(item)
 
     # '''
     #     ['GCC', 'RELEASE_*_*_CC_FLAGS', '-DMDEPKG_NDEBUG', 'COMMON', 'COMMON', 'COMMON', 35, 67]
@@ -143,12 +145,13 @@ def TestDecParser(dec_path,WorkspaceDir):
     #     print(item)
 
 if __name__ == "__main__":
-    WorkspaceDir = r"C:\BobFeng\ToolDev\BobEdk2\edk2"
+    WorkspaceDir = r"C:\Users\mliang2x\WorkSpace\GitHub_edk2\edk2"
     GlobalData.gGlobalDefines['WORKSPACE'] = WorkspaceDir
     GlobalData.gWorkspace = WorkspaceDir
     PackagesPath = os.getenv("PACKAGES_PATH")
     mws.setWs(WorkspaceDir, PackagesPath)
-    dsc_path = r"OvmfPkg\OvmfPkgIa32.dsc"
+    dsc_path = r"OvmfPkg\OvmfPkgX64.dsc"
     inf_path = r"OvmfPkg\Sec\SecMain.inf"
     dec_path = r"OvmfPkg\OvmfPkg.dec"
     TestDscParser(dsc_path,WorkspaceDir)
+    # TestInfParser(inf_path, WorkspaceDir)
