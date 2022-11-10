@@ -5,13 +5,13 @@ from CommonDataClass.DataClass import *
 import Common.GlobalData as GlobalData
 from Common.MultipleWorkspace import MultipleWorkspace as mws
 import os
-from generators.MedaFileGenerator import DscGen
+from generators.MedaFileGenerator import DscGen, DecGen, InfGen
 
 
 def TestDscParser(dsc_path,WorkspaceDir):
     dsc_parser = DscParser(PathClass(dsc_path,WorkspaceDir),MODEL_FILE_DSC,"COMMON",
                                 MetaFileStorage(PathClass(dsc_path,WorkspaceDir), MODEL_FILE_DSC))
-    
+    #
     # '''
     #     ['OvmfPkg/ResetVector/ResetVector.inf', '', '', 'COMMON', 'COMMON', 'COMMON', 474, 584]
     # '''
@@ -52,9 +52,11 @@ def TestDscParser(dsc_path,WorkspaceDir):
 
     dsc_gen = DscGen()
     dsc_gen.from_parser(dsc_parser)
-    print(dsc_gen.FormatDsc())
-    # print(dsc_gen.FormatJson())
+    # print(dsc_gen.FormatDsc("Newdsc.dsc"))
+    # print(dsc_gen.FormatJson("dsc.json"))
     # print(dsc_gen.FormatYaml())
+    print(dsc_gen.from_yaml(dsc_gen.FormatYaml()))
+
 
     # for item in dsc_parser[MODEL_EFI_DEFAULT_STORES]:
     #     print(item)
@@ -82,49 +84,61 @@ def TestDscParser(dsc_path,WorkspaceDir):
     #     print(item)
 
 def TestInfParser(inf_path,WorkspaceDir):
-    inf_parser = InfParser(PathClass(inf_path,WorkspaceDir),MODEL_FILE_INF,"IA32",
+    inf_parser = InfParser(PathClass(inf_path,WorkspaceDir),MODEL_FILE_INF,"COMMON",
                                 MetaFileStorage(PathClass(inf_path,WorkspaceDir), MODEL_FILE_INF))
-    for item in inf_parser[MODEL_META_DATA_HEADER]:
-        print(item)
 
-    for item in inf_parser[MODEL_EFI_SOURCE_FILE]:
-        print (item)
-
-    for item in inf_parser[MODEL_EFI_LIBRARY_CLASS]:
-        print(item)
-
-    for item in inf_parser[MODEL_EFI_LIBRARY_INSTANCE]:
-        print(item)
-
-    for item in inf_parser[MODEL_EFI_PROTOCOL]:
-        print(item)
-
-    for item in inf_parser[MODEL_EFI_PPI]:
-        print(item)
-
-    for item in inf_parser[MODEL_EFI_GUID]:
-        print(item)
-
-    for item in inf_parser[MODEL_EFI_INCLUDE]:
-        print(item)
-
-    for item in inf_parser[MODEL_META_DATA_PACKAGE]:
-        print(item)
-
-    for item in inf_parser[MODEL_PCD_DYNAMIC]:
-        print(item)
-
-    for item in inf_parser[MODEL_META_DATA_BUILD_OPTION]:
-        print(item)
-
-    for item in inf_parser[MODEL_EFI_DEPEX]:
-        print(item)
+    inf_gen = InfGen()
+    inf_gen.from_parser(inf_parser)
+    print(inf_gen.FormatInf())
+    inf_gen.FormatJson("inf.json")
+    # for item in inf_parser[MODEL_META_DATA_HEADER]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_EFI_SOURCE_FILE]:
+    #     print (item)
+    #
+    # for item in inf_parser[MODEL_EFI_LIBRARY_CLASS]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_EFI_LIBRARY_INSTANCE]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_EFI_PROTOCOL]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_EFI_PPI]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_EFI_GUID]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_EFI_INCLUDE]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_META_DATA_PACKAGE]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_PCD_DYNAMIC]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_META_DATA_BUILD_OPTION]:
+    #     print(item)
+    #
+    # for item in inf_parser[MODEL_EFI_DEPEX]:
+    #     print(item)
 
 def TestDecParser(dec_path,WorkspaceDir):
-    inf_parser = DecParser(PathClass(dec_path,WorkspaceDir),MODEL_FILE_INF,"IA32",
+    dec_parser = DecParser(PathClass(dec_path,WorkspaceDir),MODEL_FILE_INF,"COMMON",
                                 MetaFileStorage(PathClass(dec_path,WorkspaceDir), MODEL_FILE_INF))
-    for item in inf_parser[MODEL_META_DATA_HEADER]:
-        print(item)
+
+    dec_gen = DecGen()
+    dec_gen.from_parser(dec_parser)
+    # dec_gen.FormatJson("dec.json")
+    # print(dec_gen.FormatJson("dec.json"))
+    print(dec_gen.FormatDec())
+
+    # for item in dec_parser[MODEL_META_DATA_HEADER]:
+    #     print(item)
 
     # for item in inf_parser[MODEL_EFI_PROTOCOL]:
     #     print (item)
@@ -150,8 +164,9 @@ if __name__ == "__main__":
     GlobalData.gWorkspace = WorkspaceDir
     PackagesPath = os.getenv("PACKAGES_PATH")
     mws.setWs(WorkspaceDir, PackagesPath)
-    dsc_path = r"OvmfPkg\OvmfPkgX64.dsc"
+    dsc_path = r"OvmfPkg\OvmfPkgIA32.dsc"
     inf_path = r"OvmfPkg\Sec\SecMain.inf"
     dec_path = r"OvmfPkg\OvmfPkg.dec"
     TestDscParser(dsc_path,WorkspaceDir)
-    # TestInfParser(inf_path, WorkspaceDir)
+    TestInfParser(inf_path, WorkspaceDir)
+    TestDecParser(dec_path, WorkspaceDir)
