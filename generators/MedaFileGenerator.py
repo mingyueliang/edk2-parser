@@ -21,11 +21,14 @@ class MetaGenerator(object):
     """
     Meta file generator
     """
-    def __init__(self):
+    def __init__(self, filename):
         self.content = dict()
         self.txt = ""
         self.tab_sp = "  "
         self.arch_lst = set()
+        self.yaml = ""
+        self.json = ""
+        self.filename = filename
 
     def from_yaml(self, yaml_content):
         ''' Import the yaml_content into dict'''
@@ -39,16 +42,16 @@ class MetaGenerator(object):
         # with open("dsc.yml", "wt") as f:
         #     yaml.dump(self.content, f, default_flow_style=False, allow_unicode=True)
 
-        self.txt = yaml.dump(self.content, default_flow_style=False)
-        with open("dsc.yml", "w") as f:
-            f.write(self.txt)
-        return self.txt
+        self.yaml = yaml.dump(self.content, default_flow_style=False)
+        with open(self.filename+".yml", "w") as f:
+            f.write(self.yaml)
+        return self.yaml
 
-    def FormatJson(self, file_name):
-        self.txt = json.dumps(self.content,indent=2)
-        with open(file_name, "w") as f:
-            f.write(self.txt)
-        return self.txt
+    def FormatJson(self):
+        self.json = json.dumps(self.content, indent=2)
+        with open(self.filename+".json", "w") as f:
+            f.write(self.json)
+        return self.json
 
 
 class DscGen(MetaGenerator):
@@ -81,7 +84,7 @@ class DscGen(MetaGenerator):
         self.Set_UserExtensions(dsc_parser_dict)
         # ...
 
-    def FormatDsc(self, filename):
+    def FormatDsc(self):
         self.txt += str(Sec_Defines(self.content.get("Defines", {})))
         self.txt += str(Sec_SkuIds(self.content.get("SkuIds", {})))
         self.txt += str(Sec_DefaultStores(self.content.get("DefaultStores", {})))
@@ -100,7 +103,7 @@ class DscGen(MetaGenerator):
         self.txt += str(Sec_PcdsDynamicExVpd(self.content.get("PcdsDynamicExVpd", {})))
         self.txt += str(Sec_Libraries(self.content.get("Libraries", {})))
         self.txt += str(Sec_UserExtensions(self.content.get("UserExtensions", {})))
-        with open(filename, "w") as f:
+        with open("New_" + self.filename, "w", newline="") as f:
             f.write(self.txt)
         return self.txt
 
@@ -128,7 +131,8 @@ class DscGen(MetaGenerator):
                 if platform not in model_dict.keys():
                     model_dict[platform] = dict()
                 model_dict[platform].update({PcdName:PcdValue})
-            PcdsDict.setdefault(arch, dict()).update(model_dict)
+            if model_dict:
+                PcdsDict.setdefault(arch, dict()).update(model_dict)
         if PcdsDict:
             for arch, dic in PcdsDict.items():
                 if dic:
@@ -149,9 +153,15 @@ class DscGen(MetaGenerator):
             edk_globals[item.Value1] = item.Value2
         # Get all arch
         [self.arch_lst.add(arch) for arch in keywords["SUPPORTED_ARCHITECTURES"].split("|")]
-        defines_section["Defines"] = keywords
-        defines_section["Defines"]['DEFINE'] = macros
-        defines_section["Defines"]['EDK_GLOBAL'] = edk_globals
+        #
+        if keywords:
+            defines_section["Defines"] = keywords
+
+        if macros:
+            defines_section["Defines"]['DEFINE'] = macros
+
+        if edk_globals:
+            defines_section["Defines"]['EDK_GLOBAL'] = edk_globals
         if defines_section:
             self.content.update(defines_section)
 
@@ -228,10 +238,10 @@ class DscGen(MetaGenerator):
                 if toolchain not in l_build_opts[module_type]:
                     l_build_opts[module_type][toolchain] = dict()
                 l_build_opts[module_type][toolchain][flag] = flagvalue
-
-            build_opts[arch] = dict(l_build_opts)
+            if l_build_opts:
+                build_opts[arch] = l_build_opts
         if build_opts:
-            self.content.update({"BuildOptions":dict(build_opts)})
+            self.content.update({"BuildOptions":build_opts})
 
     def Set_LibraryClasses(self, dsc_parser_dict):
         '''
@@ -269,9 +279,9 @@ class DscGen(MetaGenerator):
                     l_lib_class[module_t] = dict()
                 l_lib_class[module_t][libclass] = libIns
 
-                lib_classes.setdefault(m_arch,dict()).update(dict(l_lib_class))
+            lib_classes[arch] = l_lib_class
         if lib_classes:
-            self.content.update({"LibraryClasses": dict(lib_classes)})
+            self.content.update({"LibraryClasses": lib_classes})
 
     def Set_Components(self, dsc_parser_dict):
         components = dict()
@@ -353,10 +363,12 @@ class DscGen(MetaGenerator):
                                     flagValue = opt.Value3
                                     buildoptions_dcit[toolchain][flag] = flagValue
                                 model_dict[section_name] = buildoptions_dcit
-                    components[arch][model.Value1] = model_dict
+                    if model_dict:
+                        components[arch][model.Value1] = model_dict
                     continue
                 components[arch][model.Value1] = ""
-        self.content.update({"Components": components})
+        if components:
+            self.content.update({"Components": components})
 
     def Set_PcdsFeatureFlag(self, dsc_parser_dict):
         PcdsFeatureFlag = dict()
@@ -475,7 +487,8 @@ class DecGen(MetaGenerator):
 
         # Format UserExtensions
         self.txt += str(DecSecUserExtensions(self.content.get("UserExtensions", {})))
-
+        with open("New_" + self.filename, "w", newline="") as f:
+            f.write(self.txt)
 
         return self.txt
 
@@ -489,9 +502,10 @@ class DecGen(MetaGenerator):
 
         for item in dec_parser[DC.MODEL_META_DATA_DEFINE]:
             macros[item.Value2] = item.Value3
-
-        defines_section["Defines"] = keywords
-        defines_section["Defines"]["DEFINE"] = macros
+        if keywords:
+            defines_section["Defines"] = keywords
+        if macros:
+            defines_section["Defines"]["DEFINE"] = macros
 
         if defines_section:
             self.content.update(defines_section)
@@ -513,7 +527,8 @@ class DecGen(MetaGenerator):
                 if private not in arch_dict:
                     arch_dict[private] = list()
                 arch_dict[private].append(ins)
-            IncludesDict.setdefault(arch, dict()).update(arch_dict)
+            if arch_dict:
+                IncludesDict.setdefault(arch, dict()).update(arch_dict)
         if IncludesDict:
             self.content.update({"Includes": IncludesDict})
 
@@ -528,7 +543,8 @@ class DecGen(MetaGenerator):
                 if private not in arch_dict:
                     arch_dict[private] = dict()
                 arch_dict[private][item.Value1] = item.Value2
-            GuidsDict.setdefault(arch, dict()).update(arch_dict)
+            if arch_dict:
+                GuidsDict.setdefault(arch, dict()).update(arch_dict)
         if GuidsDict:
             self.content.update({"Guids": GuidsDict})
 
@@ -551,7 +567,8 @@ class DecGen(MetaGenerator):
                 if private not in arch_dict:
                     arch_dict[private] = dict()
                 arch_dict[private][key] = value
-            ProtocolsDict.setdefault(arch, dict()).update(arch_dict)
+            if arch_dict:
+                ProtocolsDict.setdefault(arch, dict()).update(arch_dict)
         if ProtocolsDict:
             self.content.update({"Protocols": ProtocolsDict})
 
@@ -567,7 +584,8 @@ class DecGen(MetaGenerator):
                 if private not in arch_dict:
                     arch_dict[private] = dict()
                 arch_dict[private][key] = value
-            PpisDict.setdefault(arch, dict()).update(arch_dict)
+            if arch_dict:
+                PpisDict.setdefault(arch, dict()).update(arch_dict)
         if PpisDict:
             self.content.update({"Ppis": PpisDict})
 
@@ -583,7 +601,8 @@ class DecGen(MetaGenerator):
                 if ModelType not in lib_dict:
                     lib_dict[ModelType] = dict()
                 lib_dict[ModelType][key] = value
-            LibraryClassesDict.setdefault(arch, dict()).update(lib_dict)
+            if lib_dict:
+                LibraryClassesDict.setdefault(arch, dict()).update(lib_dict)
         if LibraryClassesDict:
             self.content.update({"LibraryClasses": LibraryClassesDict})
 
@@ -596,7 +615,8 @@ class DecGen(MetaGenerator):
                 PcdName = item.Value1 + "." + item.Value2
                 PcdValue = item.Value3
                 InPcds[PcdName] = PcdValue
-            PcdsDict[arch] = InPcds
+            if InPcds:
+                PcdsDict[arch] = InPcds
         if PcdsDict:
             self.content.update({PcdSecName: PcdsDict})
 
@@ -675,6 +695,8 @@ class InfGen(MetaGenerator):
         self.txt += str(InfSecPcd(self.content.get("PatchPcd", {}), "PatchPcd"))
         self.txt += str(InfSecUserExtensions(self.content.get("UserExtensions", {})))
 
+        with open("New_" + self.filename, "w", newline="") as f:
+            f.write(self.txt)
 
         return self.txt
 
@@ -688,8 +710,10 @@ class InfGen(MetaGenerator):
 
         for item in inf_parser[DC.MODEL_META_DATA_DEFINE]:
             macros[item.Value2] = item.Value3
-        defines_section["Defines"] = keywords
-        defines_section["Defines"]["DEFINE"] = macros
+        if keywords:
+            defines_section["Defines"] = keywords
+        if macros:
+            defines_section["Defines"]["DEFINE"] = macros
         if defines_section:
             self.content.update(defines_section)
 
@@ -700,7 +724,8 @@ class InfGen(MetaGenerator):
             sources = list()
             for item in inf_parser[DC.MODEL_EFI_SOURCE_FILE, arch]:
                 sources.append(item.Value1)
-            SourcesDict[arch] = sources
+            if sources:
+                SourcesDict[arch] = sources
         if SourcesDict:
             self.content.update({"Sources": SourcesDict})
 
@@ -723,7 +748,8 @@ class InfGen(MetaGenerator):
                 if toolchain not in arch_dict:
                     arch_dict[toolchain] = dict()
                 arch_dict[toolchain][flag] = flagvalue
-            BuildOptionsDict[arch] = arch_dict
+            if arch_dict:
+                BuildOptionsDict[arch] = arch_dict
         if BuildOptionsDict:
              self.content.update({"BuildOptions": BuildOptionsDict})
 
@@ -734,7 +760,8 @@ class InfGen(MetaGenerator):
             arch_list = list()
             for item in inf_parser[DC.MODEL_EFI_LIBRARY_CLASS, arch]:
                 arch_list.append(item.Value1)
-            LibraryClassesDict[arch] = arch_list
+            if arch_list:
+                LibraryClassesDict[arch] = arch_list
         if LibraryClassesDict:
             self.content.update({"LibraryClasses": LibraryClassesDict})
 
@@ -745,7 +772,8 @@ class InfGen(MetaGenerator):
             packages = list()
             for item in inf_parser[DC.MODEL_META_DATA_PACKAGE, arch]:
                 packages.append(item.Value1)
-            PackagesDict[arch] = packages
+            if packages:
+                PackagesDict[arch] = packages
         if PackagesDict:
             self.content.update({"Packages": PackagesDict})
 
@@ -756,7 +784,8 @@ class InfGen(MetaGenerator):
             Protocols = list()
             for item in inf_parser[DC.MODEL_EFI_PROTOCOL, arch]:
                 Protocols.append(item.Value1)
-            ProtocolsDict[arch] = Protocols
+            if Protocols:
+                ProtocolsDict[arch] = Protocols
         if ProtocolsDict:
              self.content.update({"Protocols": ProtocolsDict})
 
@@ -766,8 +795,9 @@ class InfGen(MetaGenerator):
             inf_parser = inf_parser_dict[arch]
             Ppis = list()
             for item in inf_parser[DC.MODEL_EFI_PPI, arch]:
-                Ppis.append(item.Value1 + "." + item.Value2)
-            PpisDict[arch] = Ppis
+                Ppis.append(item.Value1)
+            if Ppis:
+                PpisDict[arch] = Ppis
         if PpisDict:
             self.content.update({"Ppis": PpisDict})
 
@@ -778,7 +808,8 @@ class InfGen(MetaGenerator):
             Guids = list()
             for item in inf_parser[DC.MODEL_EFI_GUID, arch]:
                 Guids.append(item.Value1)
-            GuidsDict[arch] = Guids
+            if Guids:
+                GuidsDict[arch] = Guids
         if GuidsDict:
             self.content.update({"GUids": GuidsDict})
 
@@ -794,7 +825,8 @@ class InfGen(MetaGenerator):
                 if model_type not in InDepex:
                     InDepex[model_type] = list()
                 InDepex[model_type].append(value)
-            DepexDict[arch] = InDepex
+            if InDepex:
+                DepexDict[arch] = InDepex
         if DepexDict:
             self.content.update({"Depex": DepexDict})
 
@@ -805,7 +837,8 @@ class InfGen(MetaGenerator):
             archs = dict()
             for item in inf_parser[DC.MODEL_EFI_BINARY_FILE, arch]:
                 archs[item.Value1] = item.Value2
-            BinariesDict[arch] = archs
+            if archs:
+                BinariesDict[arch] = archs
         if BinariesDict:
             self.content.update({"Binaries": BinariesDict})
 
@@ -821,7 +854,8 @@ class InfGen(MetaGenerator):
                 PcdName = item.Value1 + "." + item.Value2
                 PcdValue = item.Value3
                 InPcds[PcdName] = PcdValue
-            PcdDict[arch] = InPcds
+            if InPcds:
+                PcdDict[arch] = InPcds
         if PcdDict:
             self.content.update({PcdSecName: PcdDict})
 

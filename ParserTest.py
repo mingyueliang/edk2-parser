@@ -8,7 +8,7 @@ import os
 from generators.MedaFileGenerator import DscGen, DecGen, InfGen
 
 
-def TestDscParser(dsc_path,WorkspaceDir):
+def TestDscParser(dsc_path,WorkspaceDir, FileName):
     dsc_parser = DscParser(PathClass(dsc_path,WorkspaceDir),MODEL_FILE_DSC,"COMMON",
                                 MetaFileStorage(PathClass(dsc_path,WorkspaceDir), MODEL_FILE_DSC))
     #
@@ -50,10 +50,10 @@ def TestDscParser(dsc_path,WorkspaceDir):
     # for item in dsc_parser[MODEL_META_DATA_GLOBAL_DEFINE,"COMMON","COMMON"]:
     #     print(item)
 
-    dsc_gen = DscGen()
+    dsc_gen = DscGen(FileName)
     dsc_gen.from_parser(dsc_parser)
-    # print(dsc_gen.FormatDsc("Newdsc.dsc"))
-    # print(dsc_gen.FormatJson("dsc.json"))
+    print(dsc_gen.FormatDsc())
+    print(dsc_gen.FormatJson())
     # print(dsc_gen.FormatYaml())
     print(dsc_gen.from_yaml(dsc_gen.FormatYaml()))
 
@@ -83,14 +83,15 @@ def TestDscParser(dsc_path,WorkspaceDir):
     # for item in dsc_parser[MODEL_META_DATA_BUILD_OPTION,"IA32",]:
     #     print(item)
 
-def TestInfParser(inf_path,WorkspaceDir):
+def TestInfParser(inf_path,WorkspaceDir, FileName):
     inf_parser = InfParser(PathClass(inf_path,WorkspaceDir),MODEL_FILE_INF,"COMMON",
                                 MetaFileStorage(PathClass(inf_path,WorkspaceDir), MODEL_FILE_INF))
 
-    inf_gen = InfGen()
+    inf_gen = InfGen(FileName)
     inf_gen.from_parser(inf_parser)
     print(inf_gen.FormatInf())
-    inf_gen.FormatJson("inf.json")
+    inf_gen.FormatJson()
+    inf_gen.FormatYaml()
     # for item in inf_parser[MODEL_META_DATA_HEADER]:
     #     print(item)
     #
@@ -127,15 +128,16 @@ def TestInfParser(inf_path,WorkspaceDir):
     # for item in inf_parser[MODEL_EFI_DEPEX]:
     #     print(item)
 
-def TestDecParser(dec_path,WorkspaceDir):
+def TestDecParser(dec_path,WorkspaceDir, FileName):
     dec_parser = DecParser(PathClass(dec_path,WorkspaceDir),MODEL_FILE_INF,"COMMON",
                                 MetaFileStorage(PathClass(dec_path,WorkspaceDir), MODEL_FILE_INF))
 
-    dec_gen = DecGen()
+    dec_gen = DecGen(FileName)
     dec_gen.from_parser(dec_parser)
     # dec_gen.FormatJson("dec.json")
-    # print(dec_gen.FormatJson("dec.json"))
+    print(dec_gen.FormatJson())
     print(dec_gen.FormatDec())
+    dec_gen.FormatYaml()
 
     # for item in dec_parser[MODEL_META_DATA_HEADER]:
     #     print(item)
@@ -167,6 +169,6 @@ if __name__ == "__main__":
     dsc_path = r"OvmfPkg\OvmfPkgIA32.dsc"
     inf_path = r"OvmfPkg\Sec\SecMain.inf"
     dec_path = r"OvmfPkg\OvmfPkg.dec"
-    TestDscParser(dsc_path,WorkspaceDir)
-    TestInfParser(inf_path, WorkspaceDir)
-    TestDecParser(dec_path, WorkspaceDir)
+    TestDscParser(dsc_path,WorkspaceDir, os.path.split(dsc_path)[1])
+    TestInfParser(inf_path, WorkspaceDir, os.path.split(inf_path)[1])
+    TestDecParser(dec_path, WorkspaceDir, os.path.split(dec_path)[1])
