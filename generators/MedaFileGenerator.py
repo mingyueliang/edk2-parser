@@ -10,9 +10,12 @@
 from .FormatDsc import *
 from .FormatDec import *
 from .FormatInf import *
+from .FormatFdf import *
 
 import CommonDataClass.DataClass as DC
 import Common.DataType as DT
+import Common.GlobalData as GlobalData
+
 import json
 import yaml
 
@@ -151,8 +154,12 @@ class DscGen(MetaGenerator):
             macros[item.Value2] = item.Value3
         for item in dsc_parser[DC.MODEL_META_DATA_GLOBAL_DEFINE,"COMMON","COMMON"]:
             edk_globals[item.Value1] = item.Value2
+
+        GlobalData.gGlobalDefines.update(edk_globals)
+        GlobalData.gPlatformDefines.update(macros)
+
         # Get all arch
-        [self.arch_lst.add(arch) for arch in keywords["SUPPORTED_ARCHITECTURES"].split("|")]
+        # [self.arch_lst.add(arch) for arch in keywords["SUPPORTED_ARCHITECTURES"].split("|")]
         #
         if keywords:
             defines_section["Defines"] = keywords
@@ -259,7 +266,7 @@ class DscGen(MetaGenerator):
         lib_classes = dict()
         '''
             {
-                Arch:{
+                :{
                     ModuleType:{
                         LibClass: LibInstance
                     }
@@ -653,7 +660,6 @@ class DecGen(MetaGenerator):
             for item in dec_parser[DC.MODEL_META_DATA_USER_EXTENSION]:
                 pass
 
-
 class InfGen(MetaGenerator):
     def from_parser(self, inf_parser):
         ''' Process the parser database and store the data in dict '''
@@ -889,8 +895,111 @@ class InfGen(MetaGenerator):
 # Fdf file generator
 #
 class FdfGen(MetaGenerator):
-    def __init__(self):
+    # def __init__(self):
+    #     pass
+
+    def from_parser(self, fdf_parser):
+        self.Set_Defines(fdf_parser)
+        self.Set_FD(fdf_parser)
+        self.Set_FV(fdf_parser)
+        self.Set_Capsule(fdf_parser)
+        self.Set_FmpPayload(fdf_parser)
+        self.Set_VTF(fdf_parser)
+        self.Set_Rule(fdf_parser)
+        self.Set_OptionRom(fdf_parser)
+
+    def FormatFdf(self):
+        self.txt += str(FdfSecDefines(self.content.get("Defines", {})))
+        self.txt += str(FdfSecFds(self.content.get("Fd", {})))
+        self.txt += str(FdfSecFvs(self.content.get("Fv", {})))
+        self.txt += str(FdfSecRules(self.content.get("Rule", {})))
+        self.txt += str(FdfSecCapsule(self.content.get("Capsule", {})))
+
+        return self.txt
+
+    #
+    # Set all sections for Fdf file
+    #
+    def Set_Defines(self, fdf_parser):
+        """
+        keywords, macors, pcds
+        :param fdf_parser: FdfParser object
+        :return:
+        """
+        macors = fdf_parser._MacroDict
+        pcds = fdf_parser._PcdDict
+
+        macors = macors.data["COMMON"]
+        while macors:
+            try:
+                macors = macors.data.get("COMMON")
+            except Exception as ex:
+                break
+
+        if macors:
+            self.content.update({"Defines": macors})
+
+        if pcds:
+            self.content.update({"pcds": pcds})
+
+    def Set_FD(self, fdf_parser):
+        """
+        FD.FdUiName: {
+            Tokens: {
+                token: value
+            },
+            Define: {
+                macro: path
+            },
+            Set: {
+                PcdName: value
+            },
+            RegionLayout: [
+            ("0x000000|0x0C0000", "gEfiMyTokenSpaceGuid.PcdFlashFvMainBaseAddress | gEfiMyTokenSpaceGuid.PcdFlashFvMainSize", "FvMain"),
+            ]
+
+        }
+        :param fdf_parser:
+        :return:
+        """
+        FdDict = fdf_parser.Profile.FdDict
+        if FdDict:
+            self.content.update({"Fd": FdDict})
+
+    def Set_FV(self, fdf_parser):
+        FvDict = fdf_parser.Profile.FvDict
+        if FvDict:
+            self.content.update({"Fv": FvDict})
+
+    def Set_Capsule(self, fdf_parser):
+        CapsuleDict = fdf_parser.Profile.CapsuleDict
+        if CapsuleDict:
+            self.content.update({"Capsule": CapsuleDict})
+
+    def Set_FmpPayload(self, fdf_parser):
+        FmpPayloadDict = fdf_parser.Profile.FmpPayloadDict
+        if FmpPayloadDict:
+            self.content.update({"FmpPayload": FmpPayloadDict})
+
+    def Set_Rule(self, fdf_parser):
+        RuleDict = fdf_parser.Profile.RuleDict
+        if RuleDict:
+            self.content.update({"Rule": RuleDict})
+
+    def Set_VTF(self, fdf_parser):
         pass
+
+    def Set_OptionRom(self, fdf_parser):
+        OptRomDict = fdf_parser.Profile.OptRomDict
+        if OptRomDict:
+            self.content.update({"OptRom": OptRomDict})
+
+
+
+
+
+
+
 
 
 

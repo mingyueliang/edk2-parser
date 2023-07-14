@@ -6,6 +6,7 @@
 
 import re
 
+gActivePlatform = None
 gIsWindows = None
 gWorkspace = "."
 gOptions = None
@@ -61,3 +62,7 @@ BuildOptionPcd = []
 
 # Pcd name for the Pcd which used in the Conditional directives
 gConditionalPcds = []
+
+
+# Test GetFv
+gGuidDict = {}

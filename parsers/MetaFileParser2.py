@@ -12,6 +12,7 @@
 
 from hashlib import md5
 import re
+import os
 from collections import defaultdict
 import Common.GlobalData as GlobalData
 from Common.BuildToolError import (
@@ -30,7 +31,7 @@ from Common.StringUtils import (
     CleanString,
     CleanString2,
     NormPath
-) 
+)
 from Common.Misc import (
     GuidStructureStringToGuidString,
     CheckPcdDatum,
@@ -43,6 +44,7 @@ from Common.Expression import ValueExpression, ValueExpressionEx, ReplaceExprMac
 from CommonDataClass.Exceptions import *
 from .MetaFileStore import MetaFileStorage
 from .MetaFileCommentParser import CheckInfComment
+from GenFds.FdfParser import *
 
 ## RegEx for finding file versions
 hexVersionPattern = re.compile(r'0[xX][\da-f-A-F]{5,8}')
@@ -712,7 +714,7 @@ class InfParser(MetaFileParser):
                             - 1,
                             self._LineIndex + 1,
                             - 1,
-                            True 
+                            True
                             )
                 for Comment, LineNo in Comments:
                     self._Store(DC.MODEL_META_DATA_COMMENT, Comment, '', '', Arch, Platform,
@@ -1162,7 +1164,7 @@ class DscParser(MetaFileParser):
                                     "",
                                     "",
                                     "",
-                                    True 
+                                    True
                                     )
 
     ## [defines] section parser
@@ -1687,7 +1689,7 @@ class DscParser(MetaFileParser):
                 Parser = DscParser(IncludedFile1, self._FileType, self._Arch, IncludedFileTable,
                                    Owner=Owner, From=FromItem)
 
-                
+
 
                 # set the parser status with current status
                 Parser._SectionName = self._SectionName
@@ -2234,6 +2236,20 @@ class DecParser(MetaFileParser):
         DC.MODEL_UNKNOWN                   :   MetaFileParser._Skip,
         DC.MODEL_META_DATA_USER_EXTENSION  :   MetaFileParser._SkipUserExtension,
     }
+
+
+class Fdf(object):
+    def __init__(self):
+        pass
+
+    def LoadFdfFile(self, Filename):
+        Filename = os.path.normpath(Filename)
+        Fdf = FdfParser(Filename)
+        Fdf.ParseFile()
+
+        return Fdf
+
+
 
 ##
 #
